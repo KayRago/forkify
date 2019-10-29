@@ -5,7 +5,9 @@
 
 import Search from './Search';
 import Recipe from './Recipe';
+import List from './List';
 import * as searchView from './searchView';
+import * as recipeView from './recipeView';
 import { elements, renderLoader, clearLoader } from './base';
 
 // global state of the app:
@@ -68,6 +70,11 @@ const controlRecipe = async () => {
     
     if (id) {
         // prepare UI for changes
+        recipeView.clearRecipe();
+        renderLoader(elements.recipe);
+        
+        // highlight selected search item
+        if (state.search) searchView.highlightSelected(id);
         
         // create new recipe object
         state.recipe = new Recipe(id);
@@ -76,14 +83,15 @@ const controlRecipe = async () => {
         try {
             // get recipe data
             await state.recipe.getRecipe();
-            //state.recipe.parseIngredients();
+            state.recipe.parseIngredients();
         
             // calculate servings and time
             state.recipe.calcTime();
             state.recipe.calcServings();
         
             // render recipe
-            console.log(state.recipe);
+            clearLoader();
+            recipeView.renderRecipe(state.recipe);
         } catch (err) {
             alert('Error processing recipe');
         }
@@ -93,6 +101,26 @@ const controlRecipe = async () => {
 };
 
 ['hashchange', 'load'].forEach(event => window.addEventListener(event, controlRecipe));
+
+
+// handling recipe button clicks
+elements.recipe.addEventListener('click', e => {
+    if (e.target.matches('.btn-decrease, .btn-decrease *')) {
+        // decrease button is clicked
+        if (state.recipe.servings > 1) {
+            state.recipe.updateServings('dec');
+            recipeView.updateServingsIngredients(state.recipe);
+        }
+            
+    } else if (e.target.matches('.btn-increase, .btn-increase *')) {
+        // increase button is clicked
+        state.recipe.updateServings('inc');
+        recipeView.updateServingsIngredients(state.recipe);
+    }
+});
+
+
+window.l = new List();
 
 
 
